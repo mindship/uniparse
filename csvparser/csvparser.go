@@ -8,7 +8,7 @@ import (
 
 // CSVOptions consists of the parser options available
 // ArrayDelimiter is the delimiter for array type column names. Default value is "."
-// IndexPos is the position of the index in array type column names. This can't be at the end or starting of the column name. Default value is 1
+// IndexPos is the position of the index (0-indexed) in array type column names. This can't be at the end or starting of the column name. Default value is 1
 // Ex:
 //		company-0-name is a valid column name but company-name-0 is not
 //		In the case of `company-0-name`, the arrayDelimiter will be `-` & indexPos will be `1`
@@ -28,6 +28,7 @@ type csv struct {
 
 // ToMap parses CSV into a map
 func (c *csv) ToMap(ctx context.Context, csvData []map[string]string) ([]map[string]interface{}, error) {
+	var res []map[string]interface{}
 
 	for _, record := range csvData {
 
@@ -38,8 +39,21 @@ func (c *csv) ToMap(ctx context.Context, csvData []map[string]string) ([]map[str
 	}
 
 	recordStructure, err := c.getCSVStructure(ctx, csvData[0])
+	if err != nil {
+		return res, err
+	}
 
 	// Create the map
+	for _, record := range csvData {
+
+		recordMap, err := c.recordToMap(ctx, recordStructure, record)
+		if err != nil {
+			return res, err
+		}
+		res = append(res, recordMap)
+	}
+
+	return res, nil
 }
 
 func (c *csv) getCSVStructure(ctx context.Context, example map[string]string) (map[string][]string, error) {
@@ -87,6 +101,60 @@ func (c *csv) getCSVStructure(ctx context.Context, example map[string]string) (m
 
 	return recordStructure, nil
 
+}
+
+func (c *csv) recordToMap(ctx context.Context, recordStructure map[string][]string, record map[string]string) (map[string]interface{}, error) {
+	recordMap := make(map[string]interface{})
+	for key, subKeys := range recordStructure {
+		if len(subKeys) == 0 {
+			// This is a single valued key
+			recordMap[key] = record[key]
+			continue
+		}
+
+		// Find the length of slice for the key
+		length := 0
+		run := true
+		subKey := subKeys[0]
+		for run == true {
+			recordKey := strings.Join([]string{key, strconv.Itoa(length), subKey}, c.options.ArrayDelimiter)
+
+			_, ok := record[recordKey]
+			if !ok {
+				// We have reached the end index for this key & subkey combination
+				run = false
+			} else {
+				length++
+			}
+		}
+
+		// Handle array type keys
+		keyData := make([]map[string]string, length)
+		for _, subKey := range subKeys {
+
+			run := true
+			index := 0
+			for run == true {
+				recordKey := strings.Join([]string{key, strconv.Itoa(index), subKey}, c.options.ArrayDelimiter)
+
+				val, ok := record[recordKey]
+				if !ok {
+					// We have reached the end index for this key & subkey combination
+					run = false
+					break
+				}
+				if len(keyData[index]) == 0 {
+					keyData[index] = make(map[string]string, len(subKeys))
+				}
+
+				keyData[index][subKey] = val
+				index++
+			}
+		}
+		recordMap[key] = keyData
+	}
+
+	return recordMap, nil
 }
 
 // NewCSV is the initialization method for the csv parser
