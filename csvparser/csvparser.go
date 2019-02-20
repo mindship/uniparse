@@ -2,6 +2,7 @@ package csvparser
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"strings"
 )
@@ -20,6 +21,7 @@ type CSVOptions struct {
 // CSV is the interface the for csv parser
 type CSV interface {
 	ToMap(ctx context.Context, csvData []map[string]string) ([]map[string]interface{}, error)
+	ToJSON(ctx context.Context, csvData []map[string]string) (string, error)
 }
 
 type csv struct {
@@ -155,6 +157,20 @@ func (c *csv) recordToMap(ctx context.Context, recordStructure map[string][]stri
 	}
 
 	return recordMap, nil
+}
+
+func (c *csv) ToJSON(ctx context.Context, csvData []map[string]string) (string, error) {
+	convertedToMap, err := c.ToMap(ctx, csvData)
+	if err != nil {
+		return "", err
+	}
+
+	convertedToJSON, err := json.Marshal(convertedToMap)
+	if err != nil {
+		return "", err
+	}
+
+	return string(convertedToJSON), nil
 }
 
 // NewCSV is the initialization method for the csv parser
