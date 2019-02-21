@@ -3,8 +3,12 @@ package csvparser
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 // CSVOptions consists of the parser options available
@@ -13,15 +17,18 @@ import (
 // Ex:
 //		company-0-name is a valid column name but company-name-0 is not
 //		In the case of `company-0-name`, the arrayDelimiter will be `-` & indexPos will be `1`
+// StructTag is the tag of the struct for struct mapping. Default value is `json`
 type CSVOptions struct {
 	ArrayDelimiter string
 	IndexPos       int
+	StructTag      string
 }
 
 // CSV is the interface the for csv parser
 type CSV interface {
 	ToMap(ctx context.Context, csvData []map[string]string) ([]map[string]interface{}, error)
 	ToJSON(ctx context.Context, csvData []map[string]string) (string, error)
+	ToStruct(ctx context.Context, csvData []map[string]string, res interface{}) error
 }
 
 type csv struct {
@@ -173,6 +180,41 @@ func (c *csv) ToJSON(ctx context.Context, csvData []map[string]string) (string, 
 	return string(convertedToJSON), nil
 }
 
+func (c *csv) ToStruct(ctx context.Context, csvData []map[string]string, res interface{}) error {
+	convertedToMap, err := c.ToMap(ctx, csvData)
+	if err != nil {
+		return err
+	}
+
+	stringToDateTimeHook := func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if t == reflect.TypeOf(time.Time{}) && f == reflect.TypeOf("") {
+			return time.Parse(time.RFC3339, data.(string))
+		}
+
+		return data, nil
+	}
+	config := mapstructure.DecoderConfig{
+		DecodeHook: stringToDateTimeHook,
+		Result:     res,
+		TagName:    c.options.StructTag,
+	}
+
+	decoder, err := mapstructure.NewDecoder(&config)
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(convertedToMap)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // NewCSV is the initialization method for the csv parser
 func NewCSV(options CSVOptions) CSV {
 	if options.ArrayDelimiter == "" {
@@ -180,6 +222,9 @@ func NewCSV(options CSVOptions) CSV {
 	}
 	if options.IndexPos == 0 {
 		options.IndexPos = 1
+	}
+	if options.StructTag == "" {
+		options.StructTag = "json"
 	}
 	return &csv{
 		options: options,
