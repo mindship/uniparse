@@ -1,4 +1,4 @@
-package csvparser
+package parser
 
 import (
 	"context"
