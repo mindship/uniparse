@@ -114,10 +114,47 @@ func (c *csv) getCSVStructure(ctx context.Context, example map[string]string) (m
 
 func (c *csv) recordToMap(ctx context.Context, recordStructure map[string][]string, record map[string]string) (map[string]interface{}, error) {
 	recordMap := make(map[string]interface{})
+
+	// Add Single valued keys
+	for key, subKeys := range recordStructure {
+		if len(subKeys) != 0 {
+			continue
+		}
+		// This is a single valued key
+		recordMap[key] = record[key]
+	}
+
+	// Add array based keys
+	for key, subKeys := range recordStructure {
+		// All the array based keys will have just one element which is an empty string in the record structure
+		if len(subKeys) == 1 && subKeys[0] == "" {
+			keyData := make([]string, 0)
+
+			run := true
+			index := 0
+			for run == true {
+				recordKey := strings.Join([]string{key, strconv.Itoa(index)}, c.options.ArrayDelimiter)
+
+				val, ok := record[recordKey]
+				if !ok {
+					// We have reached the end index for this key
+					run = false
+					break
+				}
+				keyData = append(keyData, val)
+				index++
+			}
+
+			recordMap[key] = keyData
+		}
+	}
+
+	// Add array of object based keys
 	for key, subKeys := range recordStructure {
 		if len(subKeys) == 0 {
-			// This is a single valued key
-			recordMap[key] = record[key]
+			continue
+		}
+		if len(subKeys) == 1 && subKeys[0] == "" {
 			continue
 		}
 
