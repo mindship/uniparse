@@ -197,7 +197,26 @@ func (c *csv) recordToMap(ctx context.Context, recordStructure map[string][]stri
 				index++
 			}
 		}
-		recordMap[key] = keyData
+
+		var sanitizedKeyData []map[string]string
+		// Clean up empty values from the map
+		// This will remove all the values in the key array which has empty values
+		for _, data := range keyData {
+			isMapEmpty := true
+
+			for _, v := range data {
+				if v != "" {
+					isMapEmpty = false
+					break
+				}
+			}
+
+			if !isMapEmpty {
+				sanitizedKeyData = append(sanitizedKeyData, data)
+			}
+		}
+
+		recordMap[key] = sanitizedKeyData
 	}
 
 	return recordMap, nil
