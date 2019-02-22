@@ -222,6 +222,7 @@ func (c *csv) recordToMap(ctx context.Context, recordStructure map[string][]stri
 	return recordMap, nil
 }
 
+// ToJSON parses CSV into a JSON
 func (c *csv) ToJSON(ctx context.Context, csvData []map[string]string) (string, error) {
 	convertedToMap, err := c.ToMap(ctx, csvData)
 	if err != nil {
@@ -236,6 +237,7 @@ func (c *csv) ToJSON(ctx context.Context, csvData []map[string]string) (string, 
 	return string(convertedToJSON), nil
 }
 
+// ToStruct parses CSV into a Struct/Interface
 func (c *csv) ToStruct(ctx context.Context, csvData []map[string]string, res interface{}) error {
 	convertedToMap, err := c.ToMap(ctx, csvData)
 	if err != nil {

@@ -14,7 +14,7 @@ import (
 )
 
 // CSVOptions consists of the reader options available
-// HTTPTimeout is required only if you want a custom client to handle the requests. By Default, the package keeps 10s of end-to-end request timeout with 5s TCP connect timeout & 5s of TLS handshake timeout
+// HTTPClient is required only if you want a custom client to handle the requests. By Default, the package keeps 10s of end-to-end request timeout with 5s TCP connect timeout & 5s of TLS handshake timeout
 type CSVOptions struct {
 	HTTPClient *http.Client
 }
@@ -93,7 +93,6 @@ func (c *csv) FromURL(ctx context.Context, url string) ([]map[string]string, err
 }
 
 // NewCSV is the initialization method for csv reader
-// httpTimeout is required only in case of
 func NewCSV(options CSVOptions) CSV {
 	if options.HTTPClient == nil {
 		var netTransport = &http.Transport{
