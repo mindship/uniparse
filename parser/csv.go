@@ -141,7 +141,9 @@ func (c *csv) recordToMap(ctx context.Context, recordStructure map[string][]stri
 					run = false
 					break
 				}
-				keyData = append(keyData, val)
+				if val != "" {
+					keyData = append(keyData, val)
+				}
 				index++
 			}
 
