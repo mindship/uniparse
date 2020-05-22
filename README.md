@@ -3,6 +3,9 @@
 # uniparse
 Universal CSV Parser
 
-## Disclaimer
+## Installation
+`go get github.com/mindship/uniparse`
+
+### Disclaimer
 
 `uniparse` is still in beta stage without tests and documentation. It's not ready for production yet. 
