@@ -1,4 +1,4 @@
-module uniparse
+module gitlab.com/mindship/uniparse
 
 go 1.14
 
