@@ -2,3 +2,7 @@
 
 # uniparse
 Universal CSV Parser
+
+## Disclaimer
+
+`uniparse` is still in beta stage without tests and documentation. It's not ready for production yet. 
