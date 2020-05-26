@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -85,7 +86,7 @@ func (c *csv) FromURL(ctx context.Context, url string) ([]map[string]string, err
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New("Unexpected HTTP status code")
+		return nil, errors.New("Unexpected HTTP status code: " + strconv.Itoa(resp.StatusCode))
 	}
 	defer resp.Body.Close()
 
